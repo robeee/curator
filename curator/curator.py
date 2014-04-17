@@ -250,8 +250,10 @@ def index_closed(client, index_name):
 
 def _close_index(client, index_name, **kwargs):
     if kwargs['cleanup']:
-        client.indices.delete_alias(index=index_name, name='_all')
-        client.indices.delete_warmer(index=index_name, name='_all')
+        if client.indices.get_alias(index=index_name):
+            client.indices.delete_alias(index=index_name, name='_all')
+        if client.indices.get_warmer(index=index_name):
+            client.indices.delete_warmer(index=index_name, name='_all')
 
     if index_closed(client, index_name):
         logger.info('Skipping index {0}: Already closed.'.format(index_name))
