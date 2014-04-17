@@ -109,6 +109,8 @@ def make_parser():
     parser.add_argument('-D', '--debug', dest='debug', action='store_true', help='Debug mode', default=DEFAULT_ARGS['debug'])
     parser.add_argument('-l', '--logfile', dest='log_file', help='log file', type=str)
 
+    parser.add_argument('--cleanup', action='store_true', help='Clean aliases and warmers before doing action.', default=False)
+
     return parser
 
 
@@ -247,6 +249,10 @@ def index_closed(client, index_name):
     return index_metadata['metadata']['indices'][index_name]['state'] == 'close'
 
 def _close_index(client, index_name, **kwargs):
+    if kwargs['cleanup']:
+        client.indices.delete_alias(index=index_name, name='_all')
+        client.indices.delete_warmer(index=index_name, name='_all')
+
     if index_closed(client, index_name):
         logger.info('Skipping index {0}: Already closed.'.format(index_name))
         return True
@@ -365,7 +371,7 @@ def main():
     if arguments.close_older:
         logger.info('Closing indices older than {0} {1}...'.format(arguments.close_older, arguments.time_unit))
         expired_indices = find_expired_indices(client, time_unit=arguments.time_unit, unit_count=arguments.close_older, separator=arguments.separator, prefix=arguments.prefix)
-        index_loop(client, 'close', expired_indices, arguments.dry_run)
+        index_loop(client, 'close', expired_indices, arguments.dry_run, cleanup=arguments.cleanup)
     # Disable bloom filter by time
     if arguments.bloom_older:
         logger.info('Disabling bloom filter on indices older than {0} {1}...'.format(arguments.bloom_older, arguments.time_unit))

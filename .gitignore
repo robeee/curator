@@ -6,3 +6,4 @@ elasticsearch_curator.egg-info
 .coverage
 coverage.xml
 nosetests.xml
+.DS_Store
